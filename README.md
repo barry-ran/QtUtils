@@ -1,2 +1,2 @@
-# QUtils
+# QtUtils
 Qt develop common utils
