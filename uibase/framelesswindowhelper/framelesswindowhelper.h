@@ -120,7 +120,7 @@ protected:
             pt.y = y;
             ::ScreenToClient(HWND(winId()), &pt);
             QPoint pos(pt.x, pt.y);
-            qDebug() << "xy:" << x << ":" << y  << "dpr:" << dpr << "pos" << pos << "width:" << width() << "height" << height();
+            //qDebug() << "xy:" << x << ":" << y  << "dpr:" << dpr << "pos" << pos << "width:" << width() << "height" << height();
 #else
             double dpr = this->devicePixelRatio();
             QPoint pos = mapFromGlobal(QPointF(x / dpr, y / dpr).toPoint());
