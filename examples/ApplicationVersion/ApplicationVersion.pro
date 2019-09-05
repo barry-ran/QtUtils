@@ -55,7 +55,7 @@ VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
 # 应用程序相关信息如果有中文的话，在windows平台下应该使用gbk编码，否则会乱码，所以放到单独的pri文件，
 # 这样pro文件依然是utf8编码，不影响跨平台特性
-win32: include($$PWD/version/ApplicationVersion-win.pri)
+win32: include($$PWD/version/ApplicationVersion_win.pri)
 
 # 通过rc的方式的话，上面的变量就都没有效果了
 # RC_FILE = $$PWD/version/ApplicationVersion.rc
