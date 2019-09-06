@@ -7,7 +7,8 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    // 通过qmake VERSION变量或者rc设置版本号和应用名称后，这里可以直接拿到
+    // windows下通过qmake VERSION变量或者rc设置版本号和应用名称后，这里可以直接拿到
+    // mac下拿到的是CFBundleVersion的值
     qDebug() << a.applicationVersion();
     qDebug() << a.applicationName();
 

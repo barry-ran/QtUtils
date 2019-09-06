@@ -69,10 +69,13 @@ ICON = $$PWD/version/ApplicationVersion.icns
 QMAKE_INFO_PLIST = $$PWD/version/Info.plist
 
 # 定义目标命令（修改版本号字段）
-plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" $$QMAKE_INFO_PLIST
+plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" \
+-c \"Set :CFBundleVersion $$VERSION\" \
+$$QMAKE_INFO_PLIST
+
 # 增加额外目标
 QMAKE_EXTRA_TARGETS += plistupdate
 # 设置为前置依赖
-# PRE_TARGETDEPS += plistupdate
+PRE_TARGETDEPS += plistupdate
 }
 

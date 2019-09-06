@@ -182,7 +182,7 @@ END
 - CFBundlePackageType 类型 APPL表示应用程序
 - CFBundleGetInfoString 应用简介
 - CFBundleShortVersionString 应用发布版本号
-- CFBundleVersion 编译版本号，每次构建都会更新
+- CFBundleVersion 编译版本号，格式和发布版本号一样
 - CFBundleSupportedPlatforms 支持的平台
 - LSMinimumSystemVersion 最小系统要求
 - NSHumanReadableCopyright 版权信息
@@ -194,8 +194,14 @@ END
 显然这几个变量是不够用的，我们可能还需要增加自己的键值对，而且@SHORT_VERSION@是短版本号，只有两位，所以很多时候我们需要自己修改plist中对键值对，
 这就需要[使用QMAKE_EXTRA_TARGETS自定义目标](https://doc.qt.io/archives/qt-5.6/qmake-advanced-usage.html#adding-custom-targets)了：
 ```
+ICON = $$PWD/version/ApplicationVersion.icns
+QMAKE_INFO_PLIST = $$PWD/version/Info.plist
+
 # 定义目标命令（修改版本号字段）
-plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" $$QMAKE_INFO_PLIST
+plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" \
+-c \"Set :CFBundleVersion $$VERSION\" \
+$$QMAKE_INFO_PLIST
+
 # 增加额外目标
 QMAKE_EXTRA_TARGETS += plistupdate
 # 设置为前置依赖
@@ -207,7 +213,8 @@ qt默认plist模版 /Users/bytedance/Qt5.12.4/5.12.4/clang_64/mkspecs/macx-clang
 ### 版本号判断
 可以直接用Qt提供的QVersionNumber类
 ```
-    // 通过qmake VERSION变量或者rc设置版本号和应用名称后，这里可以直接拿到
+    // windows下通过qmake VERSION变量或者rc设置版本号和应用名称后，这里可以直接拿到
+    // mac下拿到的是CFBundleVersion的值
     qDebug() << a.applicationVersion();
     qDebug() << a.applicationName();
 
