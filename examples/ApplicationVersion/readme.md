@@ -1,7 +1,9 @@
 # Qt应用部署与版本信息处理
-发布Qt应用程序的时候，设置应用程序的版本号和应用信息
+发布Qt应用程序的时候，需要设置应用程序的版本号和应用信息，最终的解决方案有如下期望：
 - 版本号入口统一，改一个地方，windows/mac都生效
 - 方便在程序中进行版本号判断
+- 支持中文
+- 线上项目最好可以通过git tag自动读取版本号
 
 ## Qt对应设置程序信息的支持
 
@@ -18,8 +20,14 @@
 
 在windows下，如果pro文件中指定了VERSION或RC_ICONS变量，则qmake会自动生成res文件链接到应用程序中，还会使用其它几个变量的值来填充res文件中的其它信息，如下所示：
 ```
-# 版本号
-VERSION = 1.0.2
+# 统一版本号入口,只修改这一个地方即可
+VERSION_MAJOR = 2
+VERSION_MINOR = 0
+VERSION_PATCH = 4
+
+# qmake变量的方式定义版本号
+VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
+
 RC_ICONS = app.ico
 QMAKE_TARGET_PRODUCT = 产品名称
 QMAKE_TARGET_COMPANY = 公司
@@ -46,53 +54,41 @@ qmake有两个系统变量RC_FILE和RES_FILE，它们直接指向外部创建的
 ```
 RC_FILE = $$PWD/ApplicationVersion.rc
 ```
-为了版本号入口统一，将版本号通过宏定义的方式放到version.h中，rc文件可以引用version.h中的宏
+为了版本号入口统一，在qmake中将版本号通过宏定义的方式再次定义，rc文件可以引用qmake中的宏
 
 - pro中：
 ```
-# 统一版本号入口
+# 统一版本号入口,只修改这一个地方即可
 VERSION_MAJOR = 2
 VERSION_MINOR = 0
-VERSION_PATCH = 1
+VERSION_PATCH = 4
 
+# qmake变量的方式定义版本号
+VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
+
+win32 {
+# 2. 通过rc的方式的话，上面的变量就都没有效果了
 # 定义宏方便rc中使用
 DEFINES += VERSION_MAJOR=$${VERSION_MAJOR}
 DEFINES += VERSION_MINOR=$${VERSION_MINOR}
 DEFINES += VERSION_PATCH=$${VERSION_PATCH}
-```
-
-- version.h中：
-```
-#ifndef VERSION_H
-#define VERSION_H
-
-#define _TOSTR(x)   #x
-#define TOSTR(x)  _TOSTR(x)
-
-// 字符串形式版本号，用于版本显示
-/* the following are compile time version */
-/* C++11 requires a space between literal and identifier */
-#define VERSION_STR TOSTR(VERSION_MAJOR) "." TOSTR(VERSION_MINOR) "." TOSTR(VERSION_PATCH)
-
-// rc形式版本号，用于windos rc文件中指定版本号
-#define VERSION_RES VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH
-
-#endif // VERSION_H
-
+DEFINES += VERSION_RC_STR=\\\"$${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}\\\"
+# 指定rc
+RC_FILE = $$PWD/version/ApplicationVersion.rc
+}
 ```
 
 - rc中：
 ```
 #include "winres.h"
-#include "version.h"
 
 // 图标
 IDI_ICON1       ICON      "ApplicationVersion.ico"
 
 // 版本信息
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION VERSION_RES
- PRODUCTVERSION VERSION_RES
+ FILEVERSION VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH
+ PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -107,12 +103,12 @@ BEGIN
     BEGIN
         BLOCK "080404b0"
         BEGIN
-            VALUE "CompanyName", "RanKun"
+            VALUE "CompanyName", "bytedance"
             VALUE "FileDescription", "文件描述"
-            VALUE "FileVersion", VERSION_STR
-            VALUE "LegalCopyright", "Copyright (C) RanKun 2018-2028. All rights reserved."
+            VALUE "FileVersion", VERSION_RC_STR
+            VALUE "LegalCopyright", "rankun copyright"
             VALUE "ProductName", "ApplicationVersion"
-            VALUE "ProductVersion", VERSION_STR
+            VALUE "ProductVersion", VERSION_RC_STR
         END
     END
     BLOCK "VarFileInfo"
@@ -120,7 +116,6 @@ BEGIN
         VALUE "Translation", 0x804, 1200
     END
 END
-
 ```
 
 ### macos
