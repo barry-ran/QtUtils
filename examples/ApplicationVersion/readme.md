@@ -5,12 +5,14 @@
 
 ## Qt对应设置程序信息的支持
 
-Qt对应设置程序信息的支持分为两种方式，完全使用qmake变量的方式和原生配置文件的方式，两种方式是互斥的，
+在windows上，Qt对应设置程序信息的支持分为两种方式，完全使用qmake变量的方式和原生配置文件的方式，两种方式是互斥的，
 如果指定了使用原生配置文件的方式，则qmake变量方式相关的变量都不再生效。
 
-### 完全使用qmake变量来设置
+在mac上，只有一个qmake变量ICON来指定应用程序图标，没有提供更多其他信息相关的qmake变量，想要设置更多信息，只能通过QMAKE_INFO_PLIST来指定自定义的plist文件来添加更多描述信息。
 
-#### windows
+### windows
+
+#### 完全使用qmake变量来设置
 
 [参考博客](https://blog.csdn.net/liang19890820/article/details/52702523)
 
@@ -37,11 +39,7 @@ QMAKE_TARGET_COPYRIGHT = 版权
 
 如果Qt提供的这几个变量不能满足你的需求，你也可以通过指定原生配置文件来设置
 
-#### macos
-
-### 通过指定原生配置文件来设置（windows的rc文件，mac的plist文件）
-
-#### windows
+#### 通过指定原生配置文件来设置（windows的rc文件）
 
 qmake有两个系统变量RC_FILE和RES_FILE，它们直接指向外部创建的.rc或.res文件。通过设置其中一个变量，指定的文件将链接到EXE或DLL。设置外部rc或者res文件后，上面使用qmake变量设置应用程序信息的方式就不再生效了。
 
@@ -125,6 +123,92 @@ END
 
 ```
 
+### macos
+在mac上，只有一个qmake变量ICON来指定应用程序图标，没有提供更多其他信息相关的qmake变量，想要设置更多信息，只能通过QMAKE_INFO_PLIST来指定自定义的plist文件来添加更多描述信息。下面是一个plist模版：
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+    <string>zh-Hans</string>
+	<key>CFBundleExecutable</key>
+    <string>@EXECUTABLE@</string>
+    <key>CFBundleIconFile</key>
+    <string>@ICON@</string>
+	<key>CFBundleIdentifier</key>
+	<string>rankun.AudioStream</string>
+    <key>CFBundleGetInfoString</key>
+    <string>Created by rankun</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>AudioStream</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+    <string>@SHORT_VERSION@</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.14</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2019 rankun. All rights reserved.</string>
+	<key>NSMainStoryboardFile</key>
+	<string>Main</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
+    <true/>
+</dict>
+</plist>
+
+```
+可以看到plist模版中有几个@@包围的变量，这是qmake在plist中的内置变量，实际处理plist的时候会替换为实际值（但这几个变量远远不够）
+
+[qmake在plist中的内置变量](https://doc.qt.io/archives/qt-5.6/qmake-variable-reference.html#QMAKE_INFO_PLIST)说明：
+- @ICON@ 就是对应的qmake变量ICON
+- @EXECUTABLE@ 可执行程序名称
+- @SHORT_VERSION@ 短版本号
+- @LIBRARY@ 库名称
+- @TYPEINFO@ 类型信息
+
+[plist关键字段说明](http://www.cocoachina.com/articles/17611)：
+- CFBundleDevelopmentRegion 本地化语言
+- CFBundleExecutable 可执行程序
+- CFBundleIconFile 图标
+- CFBundleIdentifier 应用唯一标识，采用类似java包名的方式
+- CFBundleInfoDictionaryVersion plist文件的版本，如果plist文件有修改，通过这个版本号告知mac
+- CFBundleName 简称
+- CFBundlePackageType 类型 APPL表示应用程序
+- CFBundleGetInfoString 应用简介
+- CFBundleShortVersionString 应用发布版本号
+- CFBundleVersion 编译版本号，每次构建都会更新
+- CFBundleSupportedPlatforms 支持的平台
+- LSMinimumSystemVersion 最小系统要求
+- NSHumanReadableCopyright 版权信息
+- CFBundleDisplayName 安装后显示名称
+- NSMainStoryboardFile 主Storyboard文件名称，干啥用的？
+- NSPrincipalClass 主类的名字
+
+
+显然这几个变量是不够用的，我们可能还需要增加自己的键值对，而且@SHORT_VERSION@是短版本号，只有两位，所以很多时候我们需要自己修改plist中对键值对，
+这就需要[使用QMAKE_EXTRA_TARGETS自定义目标](https://doc.qt.io/archives/qt-5.6/qmake-advanced-usage.html#adding-custom-targets)了：
+```
+# 定义目标命令（修改版本号字段）
+plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" $$QMAKE_INFO_PLIST
+# 增加额外目标
+QMAKE_EXTRA_TARGETS += plistupdate
+# 设置为前置依赖
+PRE_TARGETDEPS += plistupdate
+```
+
+qt默认plist模版 /Users/bytedance/Qt5.12.4/5.12.4/clang_64/mkspecs/macx-clang/Info.plist.app
+
 ### 版本号判断
 可以直接用Qt提供的QVersionNumber类
 ```
@@ -170,11 +254,27 @@ END
 
 [Qt设置应用程序图标](https://doc.qt.io/qt-5/appicon.html)
 
+[Qt for windows - Deployment](https://doc.qt.io/qt-5/windows-deployment.html)
+
+### macos
+
 [apple开发文档](https://developer.apple.com/documentation/)
+
+[qt默认plist目录](https://wiki.qt.io/MacOS_application_without_menu_bar)
 
 [Qt for macOS - Deployment](https://doc.qt.io/qt-5.9/osx-deployment.html)
 
-[Qt for windows - Deployment](https://doc.qt.io/qt-5/windows-deployment.html)
+[Xcode中的Info.plist字段列表详解](http://www.cocoachina.com/articles/17611)
+
+[plist苹果官方文档](https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/AboutInformationPropertyListFiles.html#//apple_ref/doc/uid/TP40009254-SW4)
+
+[ios info.plist 详解](http://www.voidcn.com/article/p-ceuvzvzi-mw.html)
+
+[借助QMAKE_EXTRA_TARGETS修改plist方法1](https://forum.qt.io/topic/80339/how-can-i-set-and-get-the-application-version/7)
+
+[借助QMAKE_EXTRA_TARGETS修改plist方法2](https://forum.qt.io/topic/6176/qmake-qmake_info_plist-and-typeinfo/2)
+
+
 
 
 

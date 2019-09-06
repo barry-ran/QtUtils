@@ -45,18 +45,32 @@ VERSION_MAJOR = 2
 VERSION_MINOR = 0
 VERSION_PATCH = 4
 
-# 定义宏方便rc中使用
-DEFINES += VERSION_MAJOR=$${VERSION_MAJOR}
-DEFINES += VERSION_MINOR=$${VERSION_MINOR}
-DEFINES += VERSION_PATCH=$${VERSION_PATCH}
-
 # qmake变量的方式定义版本号
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}
 
 # 应用程序相关信息如果有中文的话，在windows平台下应该使用gbk编码，否则会乱码，所以放到单独的pri文件，
 # 这样pro文件依然是utf8编码，不影响跨平台特性
-win32: include($$PWD/version/ApplicationVersion_win.pri)
+win32 {
+# 定义宏方便rc中使用
+DEFINES += VERSION_MAJOR=$${VERSION_MAJOR}
+DEFINES += VERSION_MINOR=$${VERSION_MINOR}
+DEFINES += VERSION_PATCH=$${VERSION_PATCH}
+
+include($$PWD/version/ApplicationVersion_win.pri)
 
 # 通过rc的方式的话，上面的变量就都没有效果了
 # RC_FILE = $$PWD/version/ApplicationVersion.rc
+}
+
+mac {
+ICON = $$PWD/version/ApplicationVersion.icns
+QMAKE_INFO_PLIST = $$PWD/version/Info.plist
+
+# 定义目标命令（修改版本号字段）
+plistupdate.commands = /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $$VERSION\" $$QMAKE_INFO_PLIST
+# 增加额外目标
+QMAKE_EXTRA_TARGETS += plistupdate
+# 设置为前置依赖
+PRE_TARGETDEPS += plistupdate
+}
 
