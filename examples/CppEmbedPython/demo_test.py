@@ -2,12 +2,15 @@
 
 #coding:utf-8
 import os
+import requests
 
 def hello(name):
    return 'hello '+ name
 
-def request(com):
-   return com
+def request():
+    response = requests.get("http://www.baidu.com/")
+    return response.text
 
 if __name__=='__main__':
-   print(hello('python'))
+   #print(hello('python'))
+   print(request())

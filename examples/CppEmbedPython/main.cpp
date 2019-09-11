@@ -35,6 +35,20 @@ int main(int argc, char *argv[])
         char *result;
         PyArg_Parse(pArg, "s", &result);
         qDebug() << result;
+
+        PyObject *requestFun = nullptr;
+        PyObject *requestArg = nullptr;
+        PyObject *requestParams = nullptr;
+        requestFun = PyObject_GetAttrString(demoModule, "request");
+        if (!pFunc) {
+            qDebug() << "fun load failed";
+        }
+        // call func
+        requestArg = PyEval_CallObject(requestFun, requestParams);
+        // get result
+        char *requestResult;
+        PyArg_Parse(requestArg, "s", &requestResult);
+        qDebug() << requestResult;
     }
     CppPython::clear();
     return a.exec();
