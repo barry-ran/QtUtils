@@ -3,4 +3,5 @@ TEMPLATE = subdirs
 SUBDIRS += \
     ApplicationVersion \
     CppEmbedPython \
-    FrameLessWindow
+    FrameLessWindow \
+    QHttp
