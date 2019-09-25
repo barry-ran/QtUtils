@@ -1,4 +1,4 @@
-#include <QMessageBox>
+#include <QFile>
 
 #include "widget.h"
 #include "ui_widget.h"
@@ -32,7 +32,9 @@ void Widget::on_testBtn_clicked()
     //data.headerList.append(pair);
     qhttp->sendRequest(data, [this](bool success, const QByteArray& data, const QString &error){
         if (success) {
-            QMessageBox::warning(this, tr("My Application"),data, QMessageBox::Ok);
+            QFile file("test.html");
+            file.open(QIODevice::WriteOnly);
+            file.write(data);
         } else {
             qDebug() << error;
         }
